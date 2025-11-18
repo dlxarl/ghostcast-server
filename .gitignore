@@ -1,0 +1,89 @@
+# ===========================
+# GLOBAL / OPERATING SYSTEMS
+# ===========================
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# ===========================
+# IDEs & EDITORS
+# ===========================
+# VS Code
+.vscode/
+*.code-workspace
+
+# JetBrains (PyCharm, WebStorm, etc.)
+.idea/
+*.iml
+
+# ===========================
+# PYTHON (Backend & Streamer Client)
+# ===========================
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual Environments
+venv/
+env/
+.venv/
+.env
+
+# Distribution / Packaging
+build/
+dist/
+*.egg-info/
+
+# Logs
+*.log
+
+# ===========================
+# DJANGO BACKEND (Specific)
+# ===========================
+# Local database (should not be committed)
+backend/db.sqlite3
+
+# Static and Media files
+# 'staticfiles' is where collectstatic outputs files for production
+backend/staticfiles/
+# 'media' contains user-uploaded files
+backend/media/
+
+# Local settings (if you use them to override settings.py)
+backend/**/local_settings.py
+
+# ===========================
+# REACT FRONTEND (Node.js)
+# ===========================
+# Dependencies (Heavy folder, strictly ignored)
+frontend/node_modules/
+
+# Build outputs (Vite/Webpack artifacts)
+frontend/dist/
+frontend/build/
+
+# Local Environment Variables (contain secrets)
+frontend/.env.local
+frontend/.env.development.local
+frontend/.env.test.local
+frontend/.env.production.local
+
+# Package Manager Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ===========================
+# TESTING & MISC
+# ===========================
+.coverage
+htmlcov/
+.pytest_cache/
