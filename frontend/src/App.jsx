@@ -8,12 +8,12 @@ import minimizeIcon from './assets/minimize.svg';
 import showIcon from './assets/show.svg';
 import hideIcon from './assets/hide.svg';
 import screenshotIcon from './assets/screenshot.svg';
+import sendIcon from './assets/send.svg';
 
 const MessageItem = ({ text }) => {
   const [expanded, setExpanded] = useState(false);
 
   const isSystem = text.startsWith("System:");
-
   const lines = text.split('\n');
   const isLong = lines.length > 5;
 
@@ -64,7 +64,6 @@ const App = () => {
   const connectToRoom = () => {
     if (!roomId) return;
 
-    // !!! CHANGE THIS TO YOUR BACKEND URL
     ws.current = new WebSocket(`ws://127.0.0.1:8000/ws/room/${roomId}/`);
 
     ws.current.onopen = () => {
@@ -80,7 +79,6 @@ const App = () => {
 
     ws.current.onmessage = (event) => {
       if (event.data instanceof Blob) {
-        // Відео потік
         const url = URL.createObjectURL(event.data);
         if (imgRef.current) {
           if (imgRef.current.src) URL.revokeObjectURL(imgRef.current.src);
@@ -93,10 +91,10 @@ const App = () => {
   };
 
   const sendMessage = (e) => {
-    if (e.type === 'keydown' && e.key === 'Enter' && !e.shiftKey) {
+    if (e && e.type === 'keydown' && e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       send();
-    } else if (e.type === 'click') {
+    } else if (!e || e.type === 'click') {
       send();
     }
 
@@ -108,6 +106,21 @@ const App = () => {
     }
   };
 
+  const takeScreenshot = () => {
+    if (!imgRef.current) return;
+    const img = imgRef.current;
+    const canvas = document.createElement("canvas");
+    canvas.width = img.naturalWidth;
+    canvas.height = img.naturalHeight;
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(img, 0, 0);
+    const dataUrl = canvas.toDataURL("image/png");
+    const link = document.createElement('a');
+    link.href = dataUrl;
+    link.download = `ghostcast_${Date.now()}.png`;
+    link.click();
+  };
+
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
       streamContainerRef.current.requestFullscreen().catch(err => alert(err.message));
@@ -116,26 +129,6 @@ const App = () => {
     }
   };
 
-  const takeScreenshot = () => {
-    if (!imgRef.current) return;
-
-    const img = imgRef.current;
-
-    const canvas = document.createElement("canvas");
-    canvas.width = img.naturalWidth;
-    canvas.height = img.naturalHeight;
-
-    const ctx = canvas.getContext("2d");
-    ctx.drawImage(img, 0, 0);
-
-    const dataUrl = canvas.toDataURL("image/png");
-    const link = document.createElement('a');
-    link.href = dataUrl;
-    link.download = `ghostcast_${Date.now()}.png`; // Назва файлу
-    link.click();
-  };
-
-  // Connect page
   if (!isInRoom) {
     return (
       <div className="app-container" style={{ backgroundImage: `url(${bgImage})` }}>
@@ -155,7 +148,6 @@ const App = () => {
     );
   }
 
-  // Stream page
   return (
     <div className="viewer-container">
       <div className="sidebar">
@@ -172,14 +164,19 @@ const App = () => {
         </div>
 
         <div className="chat-input-area">
-          <textarea
-            className="chat-input"
-            value={chatInput}
-            onChange={(e) => setChatInput(e.target.value)}
-            onKeyDown={sendMessage}
-            placeholder="Send message (Shift+Enter for new line)"
-            rows={1}
-          />
+          <div className="input-wrapper">
+            <textarea
+                className="chat-input"
+                value={chatInput}
+                onChange={(e) => setChatInput(e.target.value)}
+                onKeyDown={sendMessage}
+                placeholder="Send message..."
+                rows={1}
+            />
+            <button className="send-msg-btn" onClick={sendMessage}>
+                <img src={sendIcon} alt="Send" />
+            </button>
+          </div>
         </div>
       </div>
 
@@ -187,10 +184,9 @@ const App = () => {
         <img ref={imgRef} className="stream-image" alt="Waiting for stream..." />
 
         <div className="stream-controls">
-
           <button className="stream-btn" onClick={takeScreenshot} title="Save Screenshot">
             <img src={screenshotIcon} alt="snap" className="fs-icon" />
-            <span>Screenshot</span>
+            <span>Snapshot</span>
           </button>
 
           <button className="stream-btn" onClick={toggleFullscreen}>
@@ -199,9 +195,8 @@ const App = () => {
               alt="fs"
               className="fs-icon"
             />
-            <span>{isFullscreen ? "Fullscreen" : "Fullscreen"}</span>
+            <span>{isFullscreen ? "Exit" : "Fullscreen"}</span>
           </button>
-
         </div>
       </div>
     </div>

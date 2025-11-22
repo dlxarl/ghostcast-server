@@ -1,7 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Titillium+Web:ital,wght@0,200;0,300;0,400;0,600;0,700;0,900;1,200;1,300;1,400;1,600;1,700&display=swap');
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body, html { height: 100%; font-family: 'Titillium Web', sans-serif; background: #000; color: #fff; }
+body, html { height: 100%; font-family: 'Titillium Web', sans-serif; background: #000; color: #fff; overflow: hidden; }
 
 .app-container {
   width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center;
@@ -43,6 +43,7 @@ body, html { height: 100%; font-family: 'Titillium Web', sans-serif; background:
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-shrink: 0;
 }
 
 .disconnect-btn {
@@ -63,6 +64,7 @@ body, html { height: 100%; font-family: 'Titillium Web', sans-serif; background:
   display: flex;
   flex-direction: column;
   gap: 10px;
+  min-height: 0;
 }
 
 .message-item {
@@ -119,6 +121,13 @@ body, html { height: 100%; font-family: 'Titillium Web', sans-serif; background:
   padding: 15px;
   border-top: 1px solid #222;
   background-color: #111;
+  flex-shrink: 0;
+}
+
+.input-wrapper {
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
 }
 
 .chat-input {
@@ -138,6 +147,24 @@ body, html { height: 100%; font-family: 'Titillium Web', sans-serif; background:
 
 .chat-input:focus { border-color: #5865F2; }
 
+.send-msg-btn {
+    background-color: #5865F2;
+    border: none;
+    border-radius: 8px;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.send-msg-btn img {
+    width: 20px;
+    height: 20px;
+    filter: invert(1);
+}
 
 .stream-section {
   flex-grow: 1;
@@ -174,16 +201,13 @@ body, html { height: 100%; font-family: 'Titillium Web', sans-serif; background:
   display: flex;
   align-items: center;
   gap: 8px;
-
   background-color: rgba(0, 0, 0, 0.6);
   color: rgba(255, 255, 255, 0.9);
   border: 1px solid rgba(255, 255, 255, 0.15);
-
   padding: 8px 14px;
   border-radius: 8px;
   font-size: 13px;
   font-weight: 500;
-
   cursor: pointer;
   transition: all 0.2s ease;
 }
@@ -201,7 +225,6 @@ body, html { height: 100%; font-family: 'Titillium Web', sans-serif; background:
 }
 
 @media (max-width: 768px) {
-
   .login-card {
     width: 90%;
     padding: 25px;
@@ -210,14 +233,15 @@ body, html { height: 100%; font-family: 'Titillium Web', sans-serif; background:
 
   .viewer-container {
     flex-direction: column;
+    height: 100dvh;
   }
 
   .stream-section {
     order: 1;
     width: 100%;
-    height: 40vh;
+    height: 35vh;
     flex-grow: 0;
-    background-color: #000;
+    flex-shrink: 0;
     border-bottom: 1px solid #333;
   }
 
@@ -236,8 +260,10 @@ body, html { height: 100%; font-family: 'Titillium Web', sans-serif; background:
     order: 2;
     width: 100%;
     height: auto;
-    flex-grow: 1;
+    flex: 1;
     border-right: none;
+    min-height: 0;
+    overflow: hidden;
   }
 
   .sidebar-header {
@@ -264,11 +290,13 @@ body, html { height: 100%; font-family: 'Titillium Web', sans-serif; background:
     height: 100%;
     width: auto;
     flex-grow: 1;
+    order: 2;
   }
 
   .sidebar {
     width: 300px;
     height: 100%;
+    order: 1;
   }
 
   .sidebar-header {
