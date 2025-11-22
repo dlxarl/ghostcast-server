@@ -108,7 +108,6 @@ const App = () => {
     function send() {
       if (ws.current && chatInput.trim()) {
         ws.current.send(chatInput);
-        setMessages((prev) => [...prev, `You: ${chatInput}`]);
         setChatInput('');
       }
     }
