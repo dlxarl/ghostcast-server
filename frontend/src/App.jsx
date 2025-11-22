@@ -42,7 +42,9 @@ const App = () => {
   const [isInRoom, setIsInRoom] = useState(false);
   const [chatInput, setChatInput] = useState('');
   const [messages, setMessages] = useState([]);
-  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  const [isNativeFullscreen, setIsNativeFullscreen] = useState(false);
+  const [isFakeFullscreen, setIsFakeFullscreen] = useState(false);
 
   const ws = useRef(null);
   const imgRef = useRef(null);
@@ -54,17 +56,22 @@ const App = () => {
   }, [messages]);
 
   useEffect(() => {
-    const handleFullscreenChange = () => {
-      setIsFullscreen(!!document.fullscreenElement);
-    };
-    document.addEventListener('fullscreenchange', handleFullscreenChange);
-    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    const handleFs = () => setIsNativeFullscreen(!!document.fullscreenElement);
+    document.addEventListener('fullscreenchange', handleFs);
+    return () => document.removeEventListener('fullscreenchange', handleFs);
   }, []);
 
   const connectToRoom = () => {
     if (!roomId) return;
 
-    ws.current = new WebSocket(`ws://127.0.0.1:8000/ws/room/${roomId}/`);
+    const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+    const host = window.location.host;
+    let wsUrl = `${protocol}://${host}/ws/room/${roomId}/`;
+    if (host.includes('localhost') || host.includes('127.0.0.1')) {
+        wsUrl = `ws://127.0.0.1:8000/ws/room/${roomId}/`;
+    }
+
+    ws.current = new WebSocket(wsUrl);
 
     ws.current.onopen = () => {
       setIsInRoom(true);
@@ -101,6 +108,7 @@ const App = () => {
     function send() {
       if (ws.current && chatInput.trim()) {
         ws.current.send(chatInput);
+        setMessages((prev) => [...prev, `You: ${chatInput}`]);
         setChatInput('');
       }
     }
@@ -121,13 +129,31 @@ const App = () => {
     link.click();
   };
 
-  const toggleFullscreen = () => {
-    if (!document.fullscreenElement) {
-      streamContainerRef.current.requestFullscreen().catch(err => alert(err.message));
-    } else {
-      document.exitFullscreen();
+  const toggleFullscreen = async () => {
+    if (isFakeFullscreen) {
+      setIsFakeFullscreen(false);
+      return;
+    }
+
+    if (document.fullscreenElement) {
+      await document.exitFullscreen();
+      return;
+    }
+
+    try {
+      if (streamContainerRef.current.requestFullscreen) {
+        await streamContainerRef.current.requestFullscreen();
+      } else if (streamContainerRef.current.webkitRequestFullscreen) {
+        await streamContainerRef.current.webkitRequestFullscreen();
+      } else {
+        throw new Error();
+      }
+    } catch (err) {
+      setIsFakeFullscreen(true);
     }
   };
+
+  const isAnyFullscreen = isNativeFullscreen || isFakeFullscreen;
 
   if (!isInRoom) {
     return (
@@ -170,7 +196,7 @@ const App = () => {
                 value={chatInput}
                 onChange={(e) => setChatInput(e.target.value)}
                 onKeyDown={sendMessage}
-                placeholder="Send message..."
+                placeholder="Message..."
                 rows={1}
             />
             <button className="send-msg-btn" onClick={sendMessage}>
@@ -180,22 +206,22 @@ const App = () => {
         </div>
       </div>
 
-      <div className="stream-section" ref={streamContainerRef}>
+      <div className={`stream-section ${isFakeFullscreen ? 'fake-fullscreen' : ''}`} ref={streamContainerRef}>
         <img ref={imgRef} className="stream-image" alt="Waiting for stream..." />
 
         <div className="stream-controls">
           <button className="stream-btn" onClick={takeScreenshot} title="Save Screenshot">
             <img src={screenshotIcon} alt="snap" className="fs-icon" />
-            <span>Snapshot</span>
+            <span>Screenshot</span>
           </button>
 
           <button className="stream-btn" onClick={toggleFullscreen}>
             <img
-              src={isFullscreen ? minimizeIcon : maximizeIcon}
+              src={isAnyFullscreen ? minimizeIcon : maximizeIcon}
               alt="fs"
               className="fs-icon"
             />
-            <span>{isFullscreen ? "Exit" : "Fullscreen"}</span>
+            <span>{isAnyFullscreen ? "Fullscreen" : "Fullscreen"}</span>
           </button>
         </div>
       </div>
