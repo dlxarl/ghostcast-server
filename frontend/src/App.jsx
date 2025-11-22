@@ -169,6 +169,10 @@ const App = () => {
           </div>
           <button className="connect-btn" onClick={connectToRoom}>Connect</button>
         </div>
+
+        <div style={{position: 'absolute', bottom: '20px', color: '#888', fontSize: '12px', textAlign: 'center', width: '100%', zIndex: 2, pointerEvents: 'none'}}>
+            GhostCast is an open-source project. Not affiliated with any major service | <a className="github" href="https://github.com/dlxarl/ghostcast-server">GitHub</a>
+        </div>
       </div>
     );
   }
