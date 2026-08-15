@@ -49,7 +49,6 @@ const ICE_SERVERS = {
 const App = () => {
   const [roomId, setRoomId] = useState('');
   const [isInRoom, setIsInRoom] = useState(false);
-  const [role, setRole] = useState(null); // 'streamer' or 'viewer'
   const [chatInput, setChatInput] = useState('');
   const [messages, setMessages] = useState([]);
 
@@ -82,33 +81,8 @@ const App = () => {
     };
   }, []);
 
-  const initStreamer = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
-      localStreamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-      }
-      
-      // Stop streaming if user clicks "Stop sharing" in browser UI
-      stream.getVideoTracks()[0].onended = () => {
-        disconnect();
-      };
-
-      joinRoom('streamer');
-    } catch (err) {
-      console.error("Error starting stream:", err);
-      alert("Could not access screen for streaming.");
-    }
-  };
-
-  const initViewer = () => {
-    joinRoom('viewer');
-  };
-
-  const joinRoom = (selectedRole) => {
+  const connectToRoom = () => {
     if (!roomId) return;
-    setRole(selectedRole);
 
     const channel = supabase.channel(`room:${roomId}`, {
       config: {
@@ -123,26 +97,19 @@ const App = () => {
       .on('broadcast', { event: 'webrtc' }, async ({ payload }) => {
         // Handle WebRTC signaling
         if (payload.sender === myPeerIdRef.current) return; // Ignore own messages
-
-        if (selectedRole === 'streamer') {
-          handleStreamerSignaling(payload, channel);
-        } else if (selectedRole === 'viewer') {
-          handleViewerSignaling(payload, channel);
-        }
+        handleViewerSignaling(payload, channel);
       })
       .subscribe((status) => {
         if (status === 'SUBSCRIBED') {
           setIsInRoom(true);
-          setMessages(prev => [...prev, `System: Connected to room ${roomId} as ${selectedRole}`]);
+          setMessages(prev => [...prev, `System: Connected to room ${roomId}`]);
           
-          if (selectedRole === 'viewer') {
-            // Announce presence so streamer can send offer
-            channel.send({
-              type: 'broadcast',
-              event: 'webrtc',
-              payload: { type: 'peer-joined', sender: myPeerIdRef.current }
-            });
-          }
+          // Announce presence so streamer can send offer
+          channel.send({
+            type: 'broadcast',
+            event: 'webrtc',
+            payload: { type: 'peer-joined', sender: myPeerIdRef.current }
+          });
         } else if (status === 'CLOSED') {
           setIsInRoom(false);
           setMessages([]);
@@ -153,51 +120,6 @@ const App = () => {
       });
       
     channelRef.current = channel;
-  };
-
-  const handleStreamerSignaling = async (payload, channel) => {
-    const { type, sender, data } = payload;
-    
-    if (type === 'peer-joined') {
-      // Create new peer connection for this viewer
-      const pc = new RTCPeerConnection(ICE_SERVERS);
-      peerConnectionsRef.current.set(sender, pc);
-
-      pc.onicecandidate = (event) => {
-        if (event.candidate) {
-          channel.send({
-            type: 'broadcast',
-            event: 'webrtc',
-            payload: { type: 'ice-candidate', sender: myPeerIdRef.current, target: sender, data: event.candidate }
-          });
-        }
-      };
-
-      if (localStreamRef.current) {
-        localStreamRef.current.getTracks().forEach(track => {
-          pc.addTrack(track, localStreamRef.current);
-        });
-      }
-
-      const offer = await pc.createOffer();
-      await pc.setLocalDescription(offer);
-
-      channel.send({
-        type: 'broadcast',
-        event: 'webrtc',
-        payload: { type: 'offer', sender: myPeerIdRef.current, target: sender, data: offer }
-      });
-    } else if (type === 'answer') {
-      const pc = peerConnectionsRef.current.get(sender);
-      if (pc) {
-        await pc.setRemoteDescription(new RTCSessionDescription(data));
-      }
-    } else if (type === 'ice-candidate') {
-      const pc = peerConnectionsRef.current.get(sender);
-      if (pc) {
-        await pc.addIceCandidate(new RTCIceCandidate(data));
-      }
-    }
   };
 
   const handleViewerSignaling = async (payload, channel) => {
@@ -264,7 +186,6 @@ const App = () => {
     }
 
     setIsInRoom(false);
-    setRole(null);
     setMessages([]);
     setRoomId('');
   };
@@ -328,8 +249,7 @@ const App = () => {
             />
           </div>
           <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
-            <button className="connect-btn" style={{flex: 1, backgroundColor: '#00c3ff'}} onClick={initViewer}>Watch</button>
-            <button className="connect-btn" style={{flex: 1}} onClick={initStreamer}>Stream</button>
+            <button className="connect-btn" style={{flex: 1, backgroundColor: '#00c3ff'}} onClick={connectToRoom}>Connect to Room</button>
           </div>
         </div>
 
@@ -344,7 +264,7 @@ const App = () => {
     <div className="viewer-container">
       <div className="sidebar">
         <div className="sidebar-header">
-          <span>Room: {roomId} ({role})</span>
+          <span>Room: {roomId}</span>
           <button className="disconnect-btn" onClick={disconnect}>Exit</button>
         </div>
 
@@ -378,7 +298,6 @@ const App = () => {
             className="stream-image" 
             autoPlay 
             playsInline 
-            muted={role === 'streamer'} 
             style={{ objectFit: 'contain', background: '#000' }}
         />
 
